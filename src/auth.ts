@@ -11,6 +11,10 @@ const loginSchema = z.object({
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   session: { strategy: "jwt" },
+  pages: {
+    signIn: "/sign-in",
+    error: "/sign-in",
+  },
   providers: [
     Credentials({
       async authorize(credentials) {
@@ -40,14 +44,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   callbacks: {
     jwt({ token, user }) {
       if (user) {
-        token.id = user.id;
-        token.role = (user as any).role;
+        if (user.id) token.id = user.id;
+        token.role = user.role;
       }
       return token;
     },
     session({ session, token }) {
-      session.user.id = token.id as string;
-      (session.user as any).role = token.role;
+      if (typeof token.id === "string") session.user.id = token.id;
+      if (token.role) session.user.role = token.role;
       return session;
     },
   },
