@@ -1,9 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
-  cacheComponents: true,
-  partialPrefetching: true,
+  // Keep the development-only Next.js route indicator out of the application viewport.
+  devIndicators: false,
   turbopack: {
     rules: {
       "*.css": {
