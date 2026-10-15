@@ -8,9 +8,9 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
-      - rrs_pgdata:/var/lib/postgresql/data
+      - docket_pgdata:/var/lib/postgresql/data
 
 volumes:
-  rrs_pgdata:
+  docket_pgdata:
