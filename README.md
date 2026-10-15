@@ -1,36 +1,89 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Docket — Resource Reservation Management System
 
-## Getting Started
+A centralized reservation platform built with Next.js 15, TypeScript,
+PostgreSQL, and Prisma. Handles resource booking, conflict detection,
+lifecycle management, and role-based access.
 
-First, run the development server:
+## Tech Stack
+
+| Layer      | Technology               |
+| ---------- | ------------------------ |
+| Framework  | Next.js 15 (App Router)  |
+| Language   | TypeScript 5             |
+| Database   | PostgreSQL 16            |
+| ORM        | Prisma 7                 |
+| Auth       | Auth.js v5               |
+| Validation | Zod + React Hook Form    |
+| UI         | shadcn/ui + Tailwind CSS |
+| Dates      | date-fns                 |
+
+## Prerequisites
+
+- Node.js 20+
+- Docker Desktop (for local PostgreSQL)
+
+## Setup
 
 ```bash
+# 1. Clone
+git clone https://github.com/hellohirusha/docket.git
+cd docket
+
+# 2. Install dependencies
+npm install
+
+# 3. Environment variables
+cp .env.example .env
+# Edit .env — fill in DATABASE_URL and AUTH_SECRET
+
+# 4. Start PostgreSQL
+docker compose up -d
+
+# 5. Run migrations
+npx prisma migrate dev
+
+# 6. Seed the database
+npx prisma db seed
+
+# 7. Start the development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Default accounts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Email            | Password  | Role   |
+| ---------------- | --------- | ------ |
+| admin@docket.dev | admin123  | Admin  |
+| sarah@docket.dev | member123 | Member |
+| james@docket.dev | member123 | Member |
+| priya@docket.dev | member123 | Member |
 
-## Learn More
+## Key features
 
-To learn more about Next.js, take a look at the following resources:
+- **Conflict-safe booking** — reservation creation uses a Prisma transaction
+  to perform the overlap check and insert atomically, making double-booking
+  structurally impossible
+- **State machine** — reservations follow a strict lifecycle:
+  PENDING → CONFIRMED → COMPLETED, with CANCELLED reachable from either
+  active state. All transitions are validated server-side
+- **Append-only audit log** — every status change is recorded in
+  ReservationStatusHistory with actor and timestamp
+- **Role-based access** — Admin users manage resources, categories, users,
+  and confirm bookings. Members create and cancel their own reservations
+- **Availability visualizer** — timeline bar shows existing bookings for a
+  resource on a selected day, with the proposed slot highlighted in real time
+- **Server Actions** — all mutations go through Server Actions with Zod
+  validation; no REST API layer needed
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Architecture decisions
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Layered architecture**: Presentation → Application (Server Actions) →
+  Domain logic → Infrastructure (repositories via Prisma)
+- **JWT session carries role**: avoids a database call on every request
+- **Repository pattern**: Prisma queries are encapsulated in action files,
+  keeping pages and components free of data access logic
+- **Discriminated union result type**: every Server Action returns
+  `{ ok: true, data }` or `{ ok: false, code, message }` — no thrown
+  exceptions crossing the client/server boundary
